@@ -12,7 +12,7 @@ private:
 	unsigned char  oem_name[8];
 	unsigned short bytes_per_sector;
 	unsigned char  sectors_per_cluster;
-	unsigned short reserved_sector_count;
+	unsigned short reserved_cluster_count;
 	unsigned char  table_count;
 	unsigned short root_entry_count;
 	unsigned short total_sectors_16;
@@ -43,7 +43,7 @@ public:
 
     int get_bytes_per_sector();
     int get_cluster_per_fat();
-    int get_reserved_sector_count();
+    int get_reserved_cluster_count();
     int get_table_count();
     int get_root_entry_count();
     int get_sector_per_cluster();
@@ -130,5 +130,6 @@ public:
     FAT16();
     ~FAT16();
 
+    void reed_FAT();
     void read_file();
 };

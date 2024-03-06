@@ -21,7 +21,7 @@ void Boot_sector::print_bytes_per_sector()
 
 void Boot_sector::print_reserved_sectors()
 {
-    cout << "reserved sectors: " << this->reserved_sector_count << endl;
+    cout << "reserved sectors: " << this->reserved_cluster_count << endl;
     return;
 }
 
@@ -77,9 +77,9 @@ int Boot_sector::get_cluster_per_fat()
     return static_cast<int>(this->table_size_16);
 }
 
-int Boot_sector::get_reserved_sector_count()
+int Boot_sector::get_reserved_cluster_count()
 {
-    return static_cast<int>(this->reserved_sector_count);
+    return static_cast<int>(this->reserved_cluster_count);
 }
 
 int Boot_sector::get_table_count()
@@ -186,6 +186,7 @@ int root_dir::add_file(FILE* img)
     {
         this->files.push_back(new_file);
     }
+    return 1;
 }
 
 void root_dir::read_files()
@@ -198,7 +199,17 @@ void root_dir::read_files()
 
 FAT16::FAT16()
 {
-    img = fopen("./fat16_1sectorpercluster.img", "rb");
+}
+
+FAT16::~FAT16()
+{
+    cout << "Closing img" << endl;
+    fclose(img);
+}
+
+void FAT16::reed_FAT()
+{
+    img = fopen("./fat16_4sectorpercluster.img", "rb");
 
     if (img == nullptr)
     {
@@ -210,7 +221,9 @@ FAT16::FAT16()
 
     bs.print_core_infos();
     
-    fat_in_sector.push_back(bs.get_reserved_sector_count());
+    fat_in_sector.push_back((bs.get_reserved_cluster_count() * bs.get_sector_per_cluster()));
+    
+    cout << "fat in sectors: " << fat_in_sector[0] << endl;
 
     for (int i = 1; i < bs.get_table_count(); i++)
     {
@@ -219,10 +232,9 @@ FAT16::FAT16()
 
     root_dir_in_sector = fat_in_sector[0] + bs.get_table_count() * (bs.get_cluster_per_fat() * bs.get_sector_per_cluster());
 
-    data_in_sector = root_dir_in_sector + ((bs.get_root_entry_count() - 2) * bs.get_sector_per_cluster());
-}
+    cout << "root dir in sectors: " << root_dir_in_sector << endl;
 
-FAT16::~FAT16()
-{
-    fclose(img);
+    data_in_sector = root_dir_in_sector + (((bs.get_root_entry_count() * 32) / bs.get_bytes_per_sector()) * bs.get_sector_per_cluster());
+
+    cout << "data start in sectors: " << data_in_sector << endl;
 }
