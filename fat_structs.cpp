@@ -13,44 +13,52 @@ Boot_sector::~Boot_sector()
 {
 }
 
-void Boot_sector::print_bytes_per_sector(){
+void Boot_sector::print_bytes_per_sector()
+{
     cout << "bytes per sector: " << this->bytes_per_sector << endl;
     return;
 }
 
-void Boot_sector::print_reserved_sectors(){
+void Boot_sector::print_reserved_sectors()
+{
     cout << "reserved sectors: " << this->reserved_sector_count << endl;
     return;
 }
 
-void Boot_sector::print_sectors_per_cluster(){
+void Boot_sector::print_sectors_per_cluster()
+{
     cout << "sectors per cluster: " << static_cast<int>(this->sectors_per_cluster) << endl;
     return;
 }
 
-void Boot_sector::print_num_fat(){
+void Boot_sector::print_num_fat()
+{
     cout << "table count: " << static_cast<int>(this->table_count) << endl;
     return;
 }
 
-void Boot_sector::print_sectors_per_fat(){
+void Boot_sector::print_sectors_per_fat()
+{
     cout << "sectors per fat: " << this->table_size_16 << endl;
     return;
 }
 
-void Boot_sector::print_root_entry_count(){
+void Boot_sector::print_root_entry_count()
+{
     cout << "root entry count: " << static_cast<int>(this->root_entry_count) << endl;
     return;
 }
 
-void Boot_sector::read_boot_sector(FILE* img){
+void Boot_sector::read_boot_sector(FILE* img)
+{
     FILE* boot = img;
 
     fseek(boot, 0, SEEK_SET);
     fread(this, sizeof(Boot_sector), 1, img);
 }
 
-void Boot_sector::print_core_infos(){
+void Boot_sector::print_core_infos()
+{
     this->print_bytes_per_sector();
     this->print_reserved_sectors();
     this->print_sectors_per_cluster();
@@ -59,20 +67,34 @@ void Boot_sector::print_core_infos(){
     this->print_root_entry_count();
 }
 
-int Boot_sector::get_bytes_per_sector(){
+int Boot_sector::get_bytes_per_sector()
+{
     return static_cast<int>(this->bytes_per_sector);
 }
 
-int Boot_sector::get_sector_per_fat(){
+int Boot_sector::get_cluster_per_fat()
+{
     return static_cast<int>(this->table_size_16);
 }
 
-int Boot_sector::get_reserved_sector_count(){
+int Boot_sector::get_reserved_sector_count()
+{
     return static_cast<int>(this->reserved_sector_count);
 }
 
-int Boot_sector::get_table_count(){
+int Boot_sector::get_table_count()
+{
     return static_cast<int>(this->table_count);
+}
+
+int Boot_sector::get_root_entry_count()
+{
+    return static_cast<int>(this->root_entry_count);
+}
+
+int Boot_sector::get_sector_per_cluster()
+{
+    return static_cast<int>(this->sectors_per_cluster);
 }
 
 file83::file83()
@@ -146,8 +168,6 @@ void root_data::read_file()
     if (this->data_type == 15)
         cout << "This is a long file name type of file";
 
-    
-
     cout << endl << endl;
 }
 
@@ -194,8 +214,12 @@ FAT16::FAT16()
 
     for (int i = 1; i < bs.get_table_count(); i++)
     {
-        fat_in_sector.push_back(fat_in_sector[i-1] + bs.get_sector_per_fat());
+        fat_in_sector.push_back(fat_in_sector[i-1] + (bs.get_cluster_per_fat() * bs.get_sector_per_cluster()));
     }
+
+    root_dir_in_sector = fat_in_sector[0] + bs.get_table_count() * (bs.get_cluster_per_fat() * bs.get_sector_per_cluster());
+
+    data_in_sector = root_dir_in_sector + ((bs.get_root_entry_count() - 2) * bs.get_sector_per_cluster());
 }
 
 FAT16::~FAT16()

@@ -5,8 +5,7 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
-    string filename = "fat16_1sectorpercluster.img";
-    FAT16 fat(filename);
+    FAT16 fat();
 
     return 0;
 }

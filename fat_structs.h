@@ -42,9 +42,11 @@ public:
     void print_core_infos();
 
     int get_bytes_per_sector();
-    int get_sector_per_fat();
+    int get_cluster_per_fat();
     int get_reserved_sector_count();
     int get_table_count();
+    int get_root_entry_count();
+    int get_sector_per_cluster();
 
 }__attribute__((packed));
 
@@ -123,10 +125,10 @@ private:
     int root_dir_in_sector;
     int data_in_sector;
 
+    void read_root();
 public:
     FAT16();
     ~FAT16();
 
-    void read_root();
     void read_file();
 };
