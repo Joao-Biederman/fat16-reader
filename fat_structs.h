@@ -66,9 +66,13 @@ private:
     unsigned short first_cluster_low;
     unsigned int   size;
 
+    void print_time(short time);
+    void print_date(short date);
 public:
     file83();
     ~file83();
+
+    void read_file();
 }__attribute__((packed));
 
 class long_file
@@ -99,9 +103,10 @@ public:
     root_data();
     ~root_data();
 
-    int get_data(FILE* img);
+    int search_data(FILE* img);
     int get_data_type();
-    void read_file();
+
+    file83* get_file();
 };
 
 class root_dir
@@ -112,8 +117,8 @@ public:
     root_dir();
     ~root_dir();
 
-    int add_file(FILE* img);
-    void read_files();
+    int add_files(FILE* img, int root_dir_start);
+    void read_files(int fat_sector);
 };
 
 class FAT16
@@ -121,6 +126,7 @@ class FAT16
 private:
     FILE* img;
     Boot_sector bs;
+    root_dir root;
     vector<int> fat_in_sector;
     int root_dir_in_sector;
     int data_in_sector;
@@ -131,5 +137,5 @@ public:
     ~FAT16();
 
     void reed_FAT();
-    void read_file();
+    void read_files();
 };

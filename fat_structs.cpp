@@ -105,6 +105,44 @@ file83::~file83()
 {
 }
 
+void file83::print_time(short time)
+{
+    unsigned char hour = (time >> 11) & 0x1F;      // First 5 bits for hour
+    unsigned char minute = ((time >> 5) & 0x3F);    // Next 6 bits for minute
+    unsigned char second = time & 0x1F;             // Last 5 bits for second
+
+    cout << static_cast<int>(hour) << ":" << static_cast<int>(minute) << ":" << static_cast<int>(second);
+}
+
+void file83::print_date(short date)
+{
+    unsigned char year = (date >> 11) & 0x1F;      // First 5 bits for hour
+    unsigned char month = ((date >> 5) & 0x3F);    // Next 6 bits for minute
+    unsigned char day = date & 0x1F;             // Last 5 bits for second
+
+    cout << static_cast<int>(day) << "/" << static_cast<int>(month) << "/" << static_cast<int>(year);
+}
+
+void file83::read_file()
+{
+    cout << "file " << this->file_name << endl;
+
+    cout << "created in ";
+    print_date(date_of_creation);
+    cout << " at ";
+    print_time(time_of_creation);
+    cout << endl;
+
+    cout << "modified in ";
+    print_date(last_mod_date);
+    cout << " at ";
+    print_time(last_mod_time);
+    cout << endl;
+
+    cout << "last access at " << this->last_access << endl;
+    cout << "first cluster at " << this->first_cluster_low << endl; 
+}
+
 long_file::long_file(/* args */)
 {
 }
@@ -121,7 +159,7 @@ root_data::~root_data()
 {
 }
 
-int root_data::get_data(FILE* img)
+int root_data::search_data(FILE* img)
 {
     FILE* type = img;
     if (fseek(type, 11, SEEK_CUR) != 0){
@@ -154,7 +192,7 @@ int root_data::get_data(FILE* img)
     return 1;
 }
 
-void root_data::read_file()
+file83* root_data::get_file()
 {
     if (this->data_type == 2)
         cout << "This is a Hidden file";
@@ -168,7 +206,17 @@ void root_data::read_file()
     if (this->data_type == 15)
         cout << "This is a long file name type of file";
 
+    if (this->data_type == 16)
+        cout << "This is a directory";
+
+    if (this->data_type == 32)
+    {
+        cout << "This is an archive";
+        return &standard_8_3_file;
+    }
+
     cout << endl << endl;
+    return NULL;
 }
 
 root_dir::root_dir()
@@ -179,21 +227,31 @@ root_dir::~root_dir()
 {
 }
 
-int root_dir::add_file(FILE* img)
+int root_dir::add_files(FILE* img, int root_dir_start)
 {
+    FILE* fat_root = img;
     root_data new_file;
-    while(new_file.get_data(img))
+
+    fseek(fat_root, root_dir_start, SEEK_CUR);
+    
+    while(new_file.search_data(fat_root))
     {
         this->files.push_back(new_file);
     }
     return 1;
 }
 
-void root_dir::read_files()
+void root_dir::read_files(int fat_sector)
 {
     for (int i = 0; i < this->files.size(); i++)
     {
-        this->files[i].read_file();
+        file83* archive = this->files[i].get_file();
+
+        if (archive)
+        {
+            archive->read_file();
+        }
+        
     }
 }
 
@@ -209,7 +267,7 @@ FAT16::~FAT16()
 
 void FAT16::reed_FAT()
 {
-    img = fopen("./fat16_4sectorpercluster.img", "rb");
+    img = fopen("./fat16_1sectorpercluster.img", "rb");
 
     if (img == nullptr)
     {
@@ -221,7 +279,7 @@ void FAT16::reed_FAT()
 
     bs.print_core_infos();
     
-    fat_in_sector.push_back((bs.get_reserved_cluster_count() * bs.get_sector_per_cluster()));
+    fat_in_sector.push_back(bs.get_reserved_cluster_count());
     
     cout << "fat in sectors: " << fat_in_sector[0] << endl;
 
@@ -230,11 +288,13 @@ void FAT16::reed_FAT()
         fat_in_sector.push_back(fat_in_sector[i-1] + (bs.get_cluster_per_fat() * bs.get_sector_per_cluster()));
     }
 
-    root_dir_in_sector = fat_in_sector[0] + bs.get_table_count() * (bs.get_cluster_per_fat() * bs.get_sector_per_cluster());
+    root_dir_in_sector = fat_in_sector[0] + (bs.get_table_count() * bs.get_cluster_per_fat());
 
-    cout << "root dir in sectors: " << root_dir_in_sector << endl;
+    data_in_sector = root_dir_in_sector + ((bs.get_root_entry_count() * 32) / bs.get_bytes_per_sector());
+}
 
-    data_in_sector = root_dir_in_sector + (((bs.get_root_entry_count() * 32) / bs.get_bytes_per_sector()) * bs.get_sector_per_cluster());
-
-    cout << "data start in sectors: " << data_in_sector << endl;
+void FAT16::read_files()
+{
+    root.add_files(img, (root_dir_in_sector * bs.get_bytes_per_sector()));
+    
 }
