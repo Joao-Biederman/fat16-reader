@@ -2,20 +2,20 @@
 
 void file83::print_time(short time)
 {
-    unsigned char hour = (time >> 11) & 0x1F;      // First 5 bits for hour
-    unsigned char minute = ((time >> 5) & 0x3F);    // Next 6 bits for minute
-    unsigned char second = time & 0x1F;             // Last 5 bits for second
+    unsigned short hour = (time >> 11) & 0x1F;      // First 5 bits for hour
+    unsigned short minute = ((time >> 5) & 0x3F);    // Next 6 bits for minute
+    unsigned short second = time & 0x1F;             // Last 5 bits for second
 
-    cout << static_cast<int>(hour) << ":" << static_cast<int>(minute) << ":" << static_cast<int>(second);
+    cout << hour << ":" << minute << ":" << second*2;
 }
 
 void file83::print_date(short date)
 {
-    unsigned char year = (date >> 11) & 0x1F;      // First 5 bits for hour
-    unsigned char month = ((date >> 5) & 0x3F);    // Next 6 bits for minute
-    unsigned char day = date & 0x1F;             // Last 5 bits for second
+    unsigned short year = (date >> 12) & 0x7F;      // First 7 bits for year
+    unsigned short month = ((date >> 8) & 0x0F);    // Next 4 bits for month
+    unsigned short day = date & 0x1F;               // Last 5 bits for second
 
-    cout << static_cast<int>(day) << "/" << static_cast<int>(month) << "/" << static_cast<int>(year);
+    cout << day << "/" << month << "/" << year;
 }
 
 void file83::read_file()
@@ -34,7 +34,10 @@ void file83::read_file()
     print_time(last_mod_time);
     cout << endl;
 
-    cout << "last access at " << this->last_access << endl;
+    cout << "last access at ";
+    print_date(this->last_access);
+    cout << endl;
+    
     cout << "first cluster at " << this->first_cluster_low << endl; 
 
     cout << "data type " << static_cast<int>(this->file_atributte) << endl;
