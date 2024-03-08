@@ -41,5 +41,5 @@ void FAT16::reed_FAT()
 void FAT16::read_files()
 {
     root.add_files(img, (root_dir_in_sector * bs.get_bytes_per_sector()));
-    
+    root.read_files(this->fat_in_sector[0]);
 }

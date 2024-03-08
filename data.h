@@ -22,10 +22,9 @@ private:
     void print_time(short time);
     void print_date(short date);
 public:
-    file83();
-    ~file83();
-
     void read_file();
+    int get_data_type();
+
 }__attribute__((packed));
 
 class long_file
@@ -41,8 +40,7 @@ private:
     unsigned short last_char[2];
 
 public:
-    long_file(/* args */);
-    ~long_file();
+
 }__attribute__((packed));
 
 class root_data
@@ -53,9 +51,6 @@ private:
     long_file long_file_name;
 
 public:
-    root_data();
-    ~root_data();
-
     int search_data(FILE* img);
     int get_data_type();
 
@@ -67,9 +62,7 @@ class root_dir
 private:
     vector<root_data> files;
 public:
-    root_dir();
-    ~root_dir();
-
     int add_files(FILE* img, int root_dir_start);
     void read_files(int fat_sector);
+    
 };

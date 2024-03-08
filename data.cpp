@@ -1,13 +1,5 @@
 #include "data.h"
 
-file83::file83()
-{
-}
-
-file83::~file83()
-{
-}
-
 void file83::print_time(short time)
 {
     unsigned char hour = (time >> 11) & 0x1F;      // First 5 bits for hour
@@ -44,52 +36,36 @@ void file83::read_file()
 
     cout << "last access at " << this->last_access << endl;
     cout << "first cluster at " << this->first_cluster_low << endl; 
+
+    cout << "data type " << static_cast<int>(this->file_atributte) << endl;
 }
 
-long_file::long_file(/* args */)
+int file83::get_data_type()
 {
+    return static_cast<int>(this->file_atributte);
 }
 
-long_file::~long_file()
+int root_data::search_data(FILE* root)
 {
-}
+    file83 newFile;
+    fread(&newFile, 32, 1, root);
 
-root_data::root_data()
-{
-}
-
-root_data::~root_data()
-{
-}
-
-int root_data::search_data(FILE* img)
-{
-    FILE* type = img;
-    if (fseek(type, 11, SEEK_CUR) != 0){
-        cerr << "Error looking for type" << endl;
-        fclose(type);
-        return 0;
-    }
-
-    char data_type;
-    fread(&data_type, 1, 1, type);
-    fclose(type);
-
-    if (static_cast<int>(data_type) == 0)
+    if (newFile.get_data_type() == 0)
     {
         cout << "end of root dir data" << endl;
         return 0;
     }
 
-    this->data_type = static_cast<int>(data_type);    
+    this->data_type = newFile.get_data_type();
 
-    if (data_type != 15)
+    if (this->data_type != 15)
     {
-        fread(&this->standard_8_3_file, sizeof(file83), 1, img);
+        this->standard_8_3_file = newFile;
     }
     else
     {
-        fread(&this->long_file_name, sizeof(long_file), 1, img);
+        fseek(root, -sizeof(file83), SEEK_CUR);
+        fread(&this->long_file_name, sizeof(long_file), 1, root);
     }
     
     return 1;
@@ -114,7 +90,7 @@ file83* root_data::get_file()
 
     if (this->data_type == 32)
     {
-        cout << "This is an archive";
+        cout << "This is an archive" << endl;
         return &standard_8_3_file;
     }
 
@@ -122,20 +98,12 @@ file83* root_data::get_file()
     return NULL;
 }
 
-root_dir::root_dir()
-{
-}
-
-root_dir::~root_dir()
-{
-}
-
 int root_dir::add_files(FILE* img, int root_dir_start)
 {
     FILE* fat_root = img;
     root_data new_file;
 
-    fseek(fat_root, root_dir_start, SEEK_CUR);
+    fseek(fat_root, root_dir_start, SEEK_SET);
     
     while(new_file.search_data(fat_root))
     {
@@ -153,6 +121,7 @@ void root_dir::read_files(int fat_sector)
         if (archive)
         {
             archive->read_file();
+            cout << endl;
         }
         
     }
