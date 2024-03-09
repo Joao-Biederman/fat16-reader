@@ -12,7 +12,7 @@ FAT16::~FAT16()
 
 void FAT16::reed_FAT()
 {
-    img = fopen("./fat16_1sectorpercluster.img", "rb");
+    img = fopen("./fat16_4sectorpercluster.img", "rb");
 
     if (img == nullptr)
     {
@@ -41,5 +41,5 @@ void FAT16::reed_FAT()
 void FAT16::read_files()
 {
     root.add_files(img, (root_dir_in_sector * bs.get_bytes_per_sector()));
-    root.read_files(this->fat_in_sector[0]);
+    root.read_files(img, (this->fat_in_sector[0]*bs.get_bytes_per_sector()), this->data_in_sector, bs.get_bytes_per_sector(), bs.get_sector_per_cluster());
 }

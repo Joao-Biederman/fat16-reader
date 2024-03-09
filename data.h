@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <math.h>
 
 using namespace std;
 
@@ -22,8 +23,9 @@ private:
     void print_time(short time);
     void print_date(short date);
 public:
-    void read_file();
+    void read_file(FILE* img, int fat_in_bytes, int data_in_sector, int bytes_per_sector, int sectors_per_cluster);
     int get_data_type();
+    int get_first_cluster();
 
 }__attribute__((packed));
 
@@ -63,6 +65,6 @@ private:
     vector<root_data> files;
 public:
     int add_files(FILE* img, int root_dir_start);
-    void read_files(int fat_sector);
+    void read_files(FILE* img, int fat_in_bytes, int data_in_sector, int bytes_per_sector, int sectors_per_cluster);
     
 };

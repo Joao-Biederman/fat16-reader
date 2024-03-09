@@ -18,7 +18,7 @@ void file83::print_date(short date)
     cout << day << "/" << month << "/" << year;
 }
 
-void file83::read_file()
+void file83::read_file(FILE* img, int fat_in_bytes, int data_in_sector, int bytes_per_sector, int sectors_per_cluster)
 {
     cout << "file " << this->file_name << endl;
 
@@ -37,10 +37,53 @@ void file83::read_file()
     cout << "last access at ";
     print_date(this->last_access);
     cout << endl;
-    
-    cout << "first cluster at " << this->first_cluster_low << endl; 
 
-    cout << "data type " << static_cast<int>(this->file_atributte) << endl;
+    cout << "total size in bytes " << this->size << endl;
+
+    cout << "first cluster at " << this->first_cluster_low << endl;
+    
+    int size_of_a_cluster = bytes_per_sector*sectors_per_cluster;
+    double clusters_to_read = this->size/static_cast<double>(size_of_a_cluster);
+    cout << this->size << "/" << size_of_a_cluster << " = " << clusters_to_read << endl;
+
+    unsigned short cluster[int(ceil(clusters_to_read))];
+    if (clusters_to_read > 1)
+    {
+        cluster[0] = this->first_cluster_low;
+        int i = 0;
+        cout << "cluster " << i << " " << cluster[i] << endl;
+        do
+        {
+            fseek(img, fat_in_bytes+(2 * cluster[i]), SEEK_SET);
+            i++;
+            fread(&cluster[i], sizeof(short), 1, img);
+            cout << "cluster " << i << " " << cluster[i] << endl;
+        } while (i < ceil(clusters_to_read));
+    }
+    
+    char content[size_of_a_cluster];
+    int i = 0;
+
+    cout << "Content: " << endl << endl;
+    while (clusters_to_read >= 1)
+    {
+        if(fseek(img, bytes_per_sector*(2 + data_in_sector + cluster[i]), SEEK_SET))
+        {
+            cerr << endl << endl << "Error ocurred when looking for content on data sector" << endl;
+            return;
+        }
+        fread(&content, size_of_a_cluster, 1, img);
+        clusters_to_read -= 1;
+        cout << content;
+        i++;
+    }
+    if (clusters_to_read > 0)
+    {
+        fread(&content, size_of_a_cluster*clusters_to_read, 1, img);
+        int end_of_file = (size_of_a_cluster*clusters_to_read);
+        content[end_of_file] = '\0';
+        cout << content;
+    }
 }
 
 int file83::get_data_type()
@@ -92,10 +135,7 @@ file83* root_data::get_file()
         cout << "This is a directory";
 
     if (this->data_type == 32)
-    {
-        cout << "This is an archive" << endl;
         return &standard_8_3_file;
-    }
 
     cout << endl << endl;
     return NULL;
@@ -107,15 +147,16 @@ int root_dir::add_files(FILE* img, int root_dir_start)
     root_data new_file;
 
     fseek(fat_root, root_dir_start, SEEK_SET);
-    
+    cout << endl << "reading root dir" << endl;
     while(new_file.search_data(fat_root))
     {
         this->files.push_back(new_file);
     }
+    cout << endl;
     return 1;
 }
 
-void root_dir::read_files(int fat_sector)
+void root_dir::read_files(FILE* img, int fat_in_bytes, int data_in_sector, int bytes_per_sector, int sectors_per_cluster)
 {
     for (int i = 0; i < this->files.size(); i++)
     {
@@ -123,8 +164,8 @@ void root_dir::read_files(int fat_sector)
 
         if (archive)
         {
-            archive->read_file();
-            cout << endl;
+            archive->read_file(img, fat_in_bytes, data_in_sector, bytes_per_sector, sectors_per_cluster);
+            cout << endl << endl;
         }
         
     }
