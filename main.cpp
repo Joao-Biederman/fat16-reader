@@ -9,6 +9,7 @@ int main(int argc, char const *argv[])
 
     fat.reed_FAT();
     fat.read_files();
+    fat.print_img_infos();
 
     return 0;
 }
