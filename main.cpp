@@ -2,6 +2,7 @@
 #include <iostream>
 
 using namespace std;
+// g++ boot.cpp data.cpp fat_structs.cpp main.cpp -o main
 
 int main(int argc, char const *argv[])
 {
