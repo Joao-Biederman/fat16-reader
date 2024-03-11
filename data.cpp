@@ -78,6 +78,7 @@ void file83::read_file(FILE* img, int fat_in_bytes, int data_in_bytes, int bytes
         }
         fread(&content, size_of_a_cluster, 1, img);
         clusters_to_read -= 1;
+        content[size_of_a_cluster-1] = '\0';
         cout << content;
         i++;
     }
