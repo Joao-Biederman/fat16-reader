@@ -18,7 +18,7 @@ void file83::print_date(short date)
     cout << day << "/" << month << "/" << year;
 }
 
-void file83::read_file(FILE* img, int fat_in_bytes, int data_in_sector, int bytes_per_sector, int sectors_per_cluster)
+void file83::print_infos()
 {
     cout << "file " << this->file_name << endl;
 
@@ -41,33 +41,37 @@ void file83::read_file(FILE* img, int fat_in_bytes, int data_in_sector, int byte
     cout << "total size in bytes " << this->size << endl;
 
     cout << "first cluster at " << this->first_cluster_low << endl;
+}
+
+void file83::read_file(FILE* img, int fat_in_bytes, int data_in_bytes, int bytes_per_sector, int sectors_per_cluster)
+{
+    if (this->file_name[0] == 229)
+        return;
     
     int size_of_a_cluster = bytes_per_sector*sectors_per_cluster;
-    double clusters_to_read = this->size/static_cast<double>(size_of_a_cluster);
-    cout << this->size << "/" << size_of_a_cluster << " = " << clusters_to_read << endl;
+    double clusters_to_read = static_cast<double>(this->size)/size_of_a_cluster;
 
     unsigned short cluster[int(ceil(clusters_to_read))];
+    cluster[0] = this->first_cluster_low;
+    int i = 0;
     if (clusters_to_read > 1)
     {
-        cluster[0] = this->first_cluster_low;
-        int i = 0;
-        cout << "cluster " << i << " " << cluster[i] << endl;
         do
         {
             fseek(img, fat_in_bytes+(2 * cluster[i]), SEEK_SET);
             i++;
             fread(&cluster[i], sizeof(short), 1, img);
-            cout << "cluster " << i << " " << cluster[i] << endl;
         } while (i < ceil(clusters_to_read));
     }
     
     char content[size_of_a_cluster];
-    int i = 0;
+    i = 0;
 
+    cout << "file " << this->file_name << endl;
     cout << "Content: " << endl << endl;
     while (clusters_to_read >= 1)
     {
-        if(fseek(img, bytes_per_sector*(2 + data_in_sector + cluster[i]), SEEK_SET))
+        if(fseek(img, data_in_bytes + size_of_a_cluster * (cluster[i] - 2), SEEK_SET))
         {
             cerr << endl << endl << "Error ocurred when looking for content on data sector" << endl;
             return;
@@ -84,6 +88,8 @@ void file83::read_file(FILE* img, int fat_in_bytes, int data_in_sector, int byte
         content[end_of_file] = '\0';
         cout << content;
     }
+
+    this->print_infos();
 }
 
 int file83::get_data_type()
@@ -91,12 +97,17 @@ int file83::get_data_type()
     return static_cast<int>(this->file_atributte);
 }
 
+int file83::get_first_byte()
+{
+    return static_cast<int>(this->file_name[0]);
+}
+
 int root_data::search_data(FILE* root)
 {
     file83 newFile;
     fread(&newFile, 32, 1, root);
 
-    if (newFile.get_data_type() == 0)
+    if (newFile.get_first_byte() == 0)
     {
         cout << "end of root dir data" << endl;
         return 0;
@@ -120,7 +131,7 @@ int root_data::search_data(FILE* root)
 file83* root_data::get_file()
 {
     if (this->data_type == 2)
-        cout << "This is a Hidden file";
+        cout << "This is a hidden file";
 
     if (this->data_type == 4)
         cout << "You found a system file";
@@ -135,8 +146,15 @@ file83* root_data::get_file()
         cout << "This is a directory";
 
     if (this->data_type == 32)
+    {
+        if (this->standard_8_3_file.get_first_byte() == 229)
+        {
+            cout << "this is an unused file" << endl;
+            return NULL;
+        }
+        cout << "This is a archive" << endl;
         return &standard_8_3_file;
-
+    }
     cout << endl << endl;
     return NULL;
 }
@@ -164,8 +182,9 @@ void root_dir::read_files(FILE* img, int fat_in_bytes, int data_in_sector, int b
 
         if (archive)
         {
-            archive->read_file(img, fat_in_bytes, data_in_sector, bytes_per_sector, sectors_per_cluster);
+            archive->read_file(img, fat_in_bytes, (data_in_sector*bytes_per_sector), bytes_per_sector, sectors_per_cluster);
             cout << endl << endl;
+            return;
         }
         
     }

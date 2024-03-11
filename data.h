@@ -22,10 +22,12 @@ private:
 
     void print_time(short time);
     void print_date(short date);
+    void print_infos();
 public:
-    void read_file(FILE* img, int fat_in_bytes, int data_in_sector, int bytes_per_sector, int sectors_per_cluster);
+    void read_file(FILE* img, int fat_in_bytes, int data_in_bytes, int bytes_per_sector, int sectors_per_cluster);
     int get_data_type();
     int get_first_cluster();
+    int get_first_byte();
 
 }__attribute__((packed));
 

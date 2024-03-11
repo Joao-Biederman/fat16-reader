@@ -26,8 +26,6 @@ void FAT16::reed_FAT()
     
     fat_in_sector.push_back(bs.get_reserved_cluster_count());
     
-    cout << "fat in sectors: " << fat_in_sector[0] << endl;
-
     for (int i = 1; i < bs.get_table_count(); i++)
     {
         fat_in_sector.push_back(fat_in_sector[i-1] + (bs.get_cluster_per_fat() * bs.get_sector_per_cluster()));
@@ -42,4 +40,11 @@ void FAT16::read_files()
 {
     root.add_files(img, (root_dir_in_sector * bs.get_bytes_per_sector()));
     root.read_files(img, (this->fat_in_sector[0]*bs.get_bytes_per_sector()), this->data_in_sector, bs.get_bytes_per_sector(), bs.get_sector_per_cluster());
+}
+
+void FAT16::print_img_infos()
+{
+    cout << endl;
+    bs.print_core_infos();
+    cout << "fat in sectors: " << fat_in_sector[0] << endl;    
 }

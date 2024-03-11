@@ -24,4 +24,5 @@ public:
 
     void reed_FAT();
     void read_files();
+    void print_img_infos();
 };
